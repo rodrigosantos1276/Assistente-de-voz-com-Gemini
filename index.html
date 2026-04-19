@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistente de Voz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --surface2: #1e1e24;
+      --border: rgba(255,255,255,0.08);
+      --border-active: rgba(139,92,246,0.5);
+      --text: #f0eff4;
+      --muted: #8b8a99;
+      --accent: #7c3aed;
+      --accent-light: #a78bfa;
+      --accent-glow: rgba(124,58,237,0.15);
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 400;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #c4b5fd, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .config-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      font-weight: 400;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--border-active);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    select option { background: #1e1e24; }
+
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem 0;
+    }
+
+    .mic-btn {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
+      font-size: 2rem;
+    }
+
+    .mic-btn:hover {
+      background: rgba(124,58,237,0.25);
+      transform: scale(1.04);
+    }
+
+    .mic-btn.recording {
+      border-color: var(--red);
+      background: rgba(239,68,68,0.12);
+      color: var(--red);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .mic-btn.loading {
+      border-color: var(--amber);
+      background: rgba(245,158,11,0.1);
+      color: var(--amber);
+      cursor: not-allowed;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+      50% { box-shadow: 0 0 0 16px rgba(239,68,68,0); }
+    }
+
+    .mic-label {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    .timer-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .timer-row label { margin: 0; font-size: 0.82rem; }
+
+    input[type="range"] {
+      padding: 0;
+      height: 4px;
+      accent-color: var(--accent);
+      width: 100px;
+    }
+
+    .timer-val {
+      font-variant-numeric: tabular-nums;
+      color: var(--accent-light);
+      font-weight: 500;
+      min-width: 28px;
+    }
+
+    .output-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      min-height: 56px;
+    }
+
+    .output-block.empty {
+      color: var(--muted);
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .output-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .output-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .output-section:last-child { margin-bottom: 0; }
+
+    audio {
+      width: 100%;
+      margin-top: 0.5rem;
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .dot.active { background: var(--green); }
+    .dot.error { background: var(--red); }
+    .dot.loading { background: var(--amber); animation: blink 0.8s step-end infinite; }
+
+    @keyframes blink { 50% { opacity: 0.2; } }
+
+    .backend-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .backend-row input { flex: 1; }
+
+    .check-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .check-btn:hover { border-color: var(--border-active); color: var(--accent-light); }
+
+    .error-msg {
+      color: var(--red);
+      font-size: 0.82rem;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 480px) {
+      .config-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Assistente de Voz</h1>
+    <p>Whisper · Gemini · gTTS</p>
+  </header>
+
+  <!-- Configuração -->
+  <div class="card">
+    <div class="card-title">Configuração</div>
+
+    <div style="margin-bottom:1rem;">
+      <label>URL do backend Flask</label>
+      <div class="backend-row">
+        <input type="text" id="backendUrl" value="http://localhost:5000" placeholder="http://localhost:5000" />
+        <button class="check-btn" onclick="checkHealth()">Verificar</button>
+      </div>
+      <div class="status-bar">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusText">Não verificado</span>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div class="config-row">
+      <div>
+        <label>Chave API Gemini</label>
+        <input type="password" id="apiKey" placeholder="AIza..." />
+      </div>
+      <div>
+        <label>Idioma</label>
+        <select id="language">
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="ja">日本語</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gravação -->
+  <div class="card">
+    <div class="card-title">Gravação</div>
+    <div class="mic-area">
+      <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎙</button>
+      <span class="mic-label" id="micLabel">Clique para gravar</span>
+      <div class="timer-row">
+        <label for="duration">Duração:</label>
+        <input type="range" id="duration" min="3" max="30" value="5" step="1"
+               oninput="document.getElementById('durVal').textContent = this.value + 's'" />
+        <span class="timer-val" id="durVal">5s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div class="card">
+    <div class="card-title">Resultados</div>
+
+    <div class="output-section">
+      <div class="output-label">Transcrição (Whisper)</div>
+      <div class="output-block empty" id="transcriptionOut">Aguardando gravação...</div>
+    </div>
+
+    <div class="output-section">
+      <div class="output-label">Resposta (Gemini)</div>
+      <div class="output-block empty" id="responseOut">Aguardando...</div>
+    </div>
+
+    <div class="output-section">
+      <div class="output-label">Resposta em voz (gTTS)</div>
+      <audio id="audioPlayer" controls style="display:none;"></audio>
+      <div class="output-block empty" id="audioPlaceholder">Aguardando...</div>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let recordingTimeout = null;
+
+    async function checkHealth() {
+      const url = document.getElementById('backendUrl').value.trim();
+      const dot = document.getElementById('statusDot');
+      const txt = document.getElementById('statusText');
+      const err = document.getElementById('errorMsg');
+      dot.className = 'dot loading';
+      txt.textContent = 'Verificando...';
+      err.textContent = '';
+      try {
+        const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          dot.className = 'dot active';
+          txt.textContent = 'Conectado';
+        } else {
+          throw new Error('Status ' + res.status);
+        }
+      } catch (e) {
+        dot.className = 'dot error';
+        txt.textContent = 'Falha na conexão';
+        err.textContent = 'Certifique-se que o backend está rodando: python app.py';
+      }
+    }
+
+    async function toggleRecording() {
+      if (isRecording) return;
+      const duration = parseInt(document.getElementById('duration').value);
+      const apiKey = document.getElementById('apiKey').value.trim();
+      const language = document.getElementById('language').value;
+      const backendUrl = document.getElementById('backendUrl').value.trim();
+
+      if (!apiKey) { alert('Insira sua chave de API do Gemini.'); return; }
+
+      const btn = document.getElementById('micBtn');
+      const label = document.getElementById('micLabel');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        isRecording = true;
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.start();
+
+        btn.className = 'mic-btn recording';
+        btn.textContent = '⏹';
+        label.textContent = `Gravando... ${duration}s`;
+
+        let remaining = duration;
+        const countdown = setInterval(() => {
+          remaining--;
+          label.textContent = remaining > 0 ? `Gravando... ${remaining}s` : 'Processando...';
+          if (remaining <= 0) clearInterval(countdown);
+        }, 1000);
+
+        recordingTimeout = setTimeout(async () => {
+          mediaRecorder.stop();
+          stream.getTracks().forEach(t => t.stop());
+
+          mediaRecorder.onstop = async () => {
+            isRecording = false;
+            btn.className = 'mic-btn loading';
+            btn.textContent = '⏳';
+            label.textContent = 'Enviando ao servidor...';
+
+            const blob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio', blob, 'audio.wav');
+            formData.append('language', language);
+            formData.append('api_key', apiKey);
+
+            setOutput('transcriptionOut', '⏳ Transcrevendo com Whisper...', false);
+            setOutput('responseOut', '⏳ Aguardando transcrição...', false);
+
+            try {
+              const res = await fetch(`${backendUrl}/transcribe`, { method: 'POST', body: formData });
+              const data = await res.json();
+
+              if (data.error) throw new Error(data.error);
+
+              setOutput('transcriptionOut', data.transcription, false);
+              setOutput('responseOut', data.response, false);
+
+              if (data.audio) {
+                const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+                const audioBlob = new Blob([audioBytes], { type: 'audio/mp3' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const player = document.getElementById('audioPlayer');
+                player.src = audioUrl;
+                player.style.display = 'block';
+                document.getElementById('audioPlaceholder').style.display = 'none';
+                player.play();
+              }
+
+            } catch (e) {
+              setOutput('transcriptionOut', 'Erro: ' + e.message, false);
+              document.getElementById('errorMsg').textContent = e.message;
+            }
+
+            btn.className = 'mic-btn';
+            btn.textContent = '🎙';
+            label.textContent = 'Clique para gravar novamente';
+          };
+        }, duration * 1000);
+
+      } catch (e) {
+        isRecording = false;
+        btn.className = 'mic-btn';
+        btn.textContent = '🎙';
+        label.textContent = 'Permissão de microfone negada';
+        alert('Erro ao acessar microfone: ' + e.message);
+      }
+    }
+
+    function setOutput(id, text, empty) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = empty ? 'output-block empty' : 'output-block';
+    }
+  </script>
+</body>
+</html>
